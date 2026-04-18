@@ -29,5 +29,8 @@ htmlcov/
 *.swp
 *.swo
 
+# Runtime
+harvester.pid
+
 # Logs (data/ is already ignored, but belt-and-suspenders)
 *.log
