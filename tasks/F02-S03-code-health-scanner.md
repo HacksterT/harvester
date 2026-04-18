@@ -29,7 +29,7 @@ A scanner applicable to any Python repo that uses off-the-shelf static analysis 
 ## Tasks
 
 ### Backend
-- [ ] Implement `scanners/code_health.py`: subprocess calls to `ruff check`, `mypy`, `radon cc` (cyclomatic complexity); `grep` for TODO/FIXME with git-blame date check; parse output; rank issues by impact; return the single highest-priority `Finding`
+- [ ] Implement `scanners/code_health.py`: `SYSTEM_PROMPT` instructs Claude to use `run_command` to invoke `ruff check`, `mypy`, and `radon cc` against the target repo, read any files of interest, then call `report_finding` with the single highest-priority issue; `ENABLED_TOOLS = ["run_command", "read_file", "list_directory", "read_git_log"]`; `scanner_runner.py` drives the tool-calling loop; Claude decides which tools to call and in what order
 - [ ] Add default thresholds to `ScanContext` or scanner config: `max_file_lines: 400`, `max_function_complexity: 10`, `min_coverage_pct: 80`, `todo_staleness_days: 30`
 - [ ] Support per-repo threshold overrides via `harvester-config.yaml` scanner entry `thresholds:` key; validated by pydantic in `config.py`
 - [ ] Update `docs/scanner-contract.md` with a `code_health` worked example
@@ -48,11 +48,11 @@ A scanner applicable to any Python repo that uses off-the-shelf static analysis 
 
 ## Technical Notes
 
-The scanner invokes tools as subprocesses rather than importing them as libraries. This keeps Harvester's dependency list clean — ruff, mypy, and radon are installed in the target repo's environment, not Harvester's. Use `subprocess.run([tool, ...], cwd=repo_config.local_path, capture_output=True, text=True)`.
+The scanner does not invoke subprocesses directly. Instead, `scanner_runner.py` exposes `run_command` as a tool that Claude calls within its tool-calling loop. The `run_command` tool uses `subprocess.run` with `cwd=target_config.local_path` and enforces the allowlist (`ruff`, `mypy`, `radon`, `coverage`, `git`). This keeps static analysis invocation in Claude's hands — it decides which commands to run, interprets the output, and explores further as needed before calling `report_finding`.
 
-The scanner's LLM call is minimal: the tool outputs contain the raw facts; Grok's job is to select the single highest-value finding from them and generate the `Finding.title`, `Finding.summary`, and `Finding.criteria` fields in structured format. Evidence is the raw tool output excerpt.
+The scanner module itself contains no subprocess logic. It is a `SYSTEM_PROMPT` and `ENABLED_TOOLS` — the framework handles everything else.
 
-`radon cc` output format: `src/ezra/memory/store.py - F:42 run_decay_sweep - B (6)`. Parse with simple regex to extract file, function, score.
+`radon cc` output format: `src/ezra/memory/store.py - F:42 run_decay_sweep - B (6)`. Claude reads and interprets this format directly.
 
 ## Blockers
 

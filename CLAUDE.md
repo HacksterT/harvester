@@ -84,16 +84,16 @@ src/harvester/
 ├── writer.py            Finding → GitHub issue + local JSONL log
 ├── runner.py            Queue status endpoint; used by launchd health check
 ├── models.py            Finding, ScanContext, QueueItem, RunResult dataclasses
-├── llm.py               Grok + Ollama + MockLLMClient
+├── scanner_runner.py    Drives the Anthropic tool_runner loop for every scanner
+├── tools.py             @beta_tool definitions: read_file, query_sqlite, run_command, list_directory, read_git_log, report_finding
 ├── ui/
 │   ├── app.py           FastAPI routes for web UI
 │   └── templates/       Jinja templates (base, dashboard, repo, scanner, queue, log)
 └── scanners/
     ├── __init__.py
-    ├── base.py          Scanner protocol, LLMClient ABC, helpers
-    ├── skill_gaps.py    (ported from Ezra)
-    ├── memory.py        (ported from Ezra)
-    ├── tokens.py        (ported from Ezra)
+    ├── skill_gaps.py    SYSTEM_PROMPT + ENABLED_TOOLS for Ezra skill gap analysis
+    ├── memory.py        SYSTEM_PROMPT + ENABLED_TOOLS for Ezra memory health
+    ├── tokens.py        SYSTEM_PROMPT + ENABLED_TOOLS for Ezra token spend
     ├── theology_review.py  (Selah-specific, F02)
     ├── code_health.py   (generic, F02)
     └── cross_repo_patterns.py  (meta, F02)
@@ -137,21 +137,24 @@ When editing code that touches config, keep the pydantic models in `config.py` a
 
 ## The Scanner Contract
 
-All scanners implement one async function:
+Each scanner is a **thin prompt module** — a Python file with two module-level constants:
 
 ```python
-async def scan(
-    repo_config: RepoConfig,
-    llm: LLMClient,
-    context: ScanContext,
-) -> Finding | None:
+# src/harvester/scanners/<name>.py
+SYSTEM_PROMPT: str       # What to look for and how to call report_finding
+ENABLED_TOOLS: list[str] # Subset of: read_file, query_sqlite, run_command,
+                         #            list_directory, read_git_log
 ```
 
-Scanners are **pure from a side-effect standpoint**: they do not create issues, write files, or send notifications. They return structured data. The framework handles all side effects. Scanners are testable in isolation.
+`scanner_runner.py` does all the work. It instantiates `AsyncAnthropic()`, builds the tool list from `ENABLED_TOOLS` (selecting from the `@beta_tool` functions in `tools.py`) plus `report_finding`, and calls `client.beta.messages.tool_runner()`. The runner loop handles all tool dispatching automatically. When Claude calls `report_finding`, its input becomes a `Finding`. When the runner reaches `end_turn` without a `report_finding` call, `None` is returned.
+
+`report_finding` is a `@beta_tool` whose invocation is the **only** structured output path for scanners. Its parameter schema matches the `Finding` dataclass fields exactly.
+
+Scanners are **pure from a side-effect standpoint**: they do not create issues, write files, or send notifications. They return a `Finding | None`. The framework handles all side effects. Scanners are testable in isolation by mocking `AsyncAnthropic`.
 
 When adding a scanner:
-1. Create `src/harvester/scanners/<name>.py` implementing the contract
-2. Add tests in `tests/scanners/test_<name>.py`
+1. Create `src/harvester/scanners/<name>.py` with `SYSTEM_PROMPT` and `ENABLED_TOOLS`
+2. Add tests in `tests/scanners/test_<name>.py` — mock `AsyncAnthropic`, assert on `Finding` fields
 3. Reference it by module name in `harvester-config.yaml` examples and `docs/scanner-contract.md`
 
 ---
@@ -196,7 +199,7 @@ Tests must pass before committing. Test locations:
 - Config: `tests/test_config.py`
 - UI: `tests/ui/test_ui_routes.py`
 
-**Scanner unit test pattern:** call `scan()` with mock `RepoConfig` and `MockLLMClient`, assert on the returned `Finding`. No network, no filesystem, no GitHub API.
+**Scanner unit test pattern:** mock `AsyncAnthropic` to simulate a `tool_runner` sequence (tool calls + `report_finding`); assert on the returned `Finding`. No real API calls, no real filesystem, no GitHub API.
 
 Never `@pytest.mark.skip` a failing test to get a green run.
 

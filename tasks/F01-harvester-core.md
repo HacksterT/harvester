@@ -30,7 +30,7 @@ The architecture is intentionally boring: a FastAPI server with an asyncio sched
 | F01-S01 | Bootstrap and Scaffolding | Must-Have | Backlog |
 | F01-S02 | GitHub Integration Layer | Must-Have | Backlog |
 | F01-S03 | Scheduler and Queue System | Must-Have | Backlog |
-| F01-S04 | Port Ezra Scanners as Harvester Modules | Must-Have | Backlog |
+| F01-S04 | Build Scanner Framework with Claude SDK | Must-Have | Backlog |
 | F01-S05 | Agent Runner with Subscription Auth | Must-Have | Backlog |
 | F01-S06 | Webhook-Driven State Synchronization | Must-Have | Backlog |
 
@@ -53,7 +53,7 @@ The architecture is intentionally boring: a FastAPI server with an asyncio sched
 - `gh` CLI authenticated
 - Cloudflare Tunnel active (existing LAN-Central-Command infrastructure)
 - GitHub fine-grained PAT with issues + PRs write scope on `ezra-assistant`
-- xAI API key for scanner LLM calls
+- Anthropic API key for scanner LLM calls (`ANTHROPIC_API_KEY`)
 - Telegram bot token (reused from Ezra)
 
 ## Success Metrics
@@ -67,7 +67,7 @@ The architecture is intentionally boring: a FastAPI server with an asyncio sched
 ## Open Design Decisions
 
 - **Subscription session expiry mitigation.** Claude Code subscription sessions expire after extended inactivity. Current plan: preflight check in agent-runner.sh, weekly Apple Calendar reminder to refresh manually, loud Telegram alert on stale auth. If this proves too fragile in practice, fallback to API key auth is configurable (`claude_code_auth: api` in config).
-- **Scanner LLM.** Grok (xAI) is the default scanner LLM. The Harvester scanners read Ezra's database files directly (not via Ezra's API), so Ezra does not need to be running for scans to execute. Confirm Grok availability via `XAI_API_KEY` in `.env`.
+- **Scanner LLM.** Scanners use the Anthropic Claude SDK (`anthropic.AsyncAnthropic`) with tool-calling for iterative repo exploration. Each scanner is a thin prompt module; `scanner_runner.py` drives the tool-calling loop. The `report_finding` tool is the structured output path — its input schema matches the `Finding` dataclass. Prompt caching is enabled on scanner system prompts via `cache_control`. Ezra does not need to be running for scans — scanners read its database files and filesystem directly from `local_path`. Requires `ANTHROPIC_API_KEY` in `.env`.
 - **Premortem — webhook delivery gap.** If the Mac is offline when a webhook fires, GitHub retries for ~72 hours. When Harvester comes back online, startup reconciliation (F01-S06) catches events missed during downtime. No data is lost; there may be a delay in queue state.
 - **Premortem — agent workspace contamination.** A failed agent run could leave a workspace in a dirty state. Mitigation: agent-runner.sh hard-resets the workspace to `origin/main` before every run, regardless of prior state.
 - **Premortem — scanner produces no findings for weeks.** If a scanner returns `None` three consecutive runs, Harvester logs a Telegram note suggesting cadence review. This is tracked via `consecutive_skips` in `harvester-state.json`.

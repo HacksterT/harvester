@@ -28,7 +28,7 @@ The self-annealing mechanism: a scanner that mines the historical corpus of clos
 ## Tasks
 
 ### Backend
-- [ ] Implement `scanners/cross_repo_patterns.py`: `GitHubClient.list_issues()` across all configured repos with `label:improvement state:closed`; pull merge status from linked PRs; compute metrics: merge rate per scanner, rejection reasons from issue close method, recurring title patterns via simple token overlap; pass to Grok for pattern synthesis; return one `Finding` or `None`
+- [ ] Implement `scanners/cross_repo_patterns.py`: `SYSTEM_PROMPT` instructs Claude to analyze the provided issue corpus (merge rate per scanner, rejection patterns, recurring domains) and call `report_finding` with one actionable signal; `ENABLED_TOOLS = []` (no filesystem access needed — GitHub data is injected into the prompt as structured context by the runner); the runner passes a pre-built JSON summary of closed issues as the user message
 - [ ] Add corpus gate check: count total closed issues; return `None` immediately if below threshold (log at DEBUG)
 - [ ] Register `cross_repo_patterns` scanner in `scanners/__init__.py`; add to Ezra's config entry in `harvester-config.yaml` with `cadence_days: 30`
 - [ ] Update `harvester-state.json` schema docs to include the cross-repo scanner entry
@@ -50,7 +50,7 @@ Pattern detection approach: keep it simple. Three signal categories:
 2. Low-activity repo: repo Y has had 0 merges in 60 days despite issues being labeled `agent-ready`
 3. Recurring domain: same domain appears in 3+ consecutive issues across any repo
 
-Grok's job is to take these signals and write a readable finding summary with one specific recommendation. The scanner should not try to do NLP or ML — it is a metric aggregator. Grok is the analyst.
+Claude's job is to take these signals and write a readable finding summary with one specific recommendation. The scanner should not try to do NLP or ML — it is a metric aggregator. Claude is the analyst, invoked via `scanner_runner.py` + `client.beta.messages.tool_runner()` with only `report_finding` in the tool list.
 
 This scanner is the only one that does not read local filesystem state. It reads GitHub exclusively via `GitHubClient`. This means it runs correctly even if local Ezra/Selah repos are not present.
 

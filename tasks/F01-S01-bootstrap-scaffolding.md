@@ -31,7 +31,7 @@ Create the `hackstert/harvester` repository with complete project structure, wor
 ## Tasks
 
 ### Backend
-- [ ] Initialize repo with `uv init`, configure `pyproject.toml` with the minimum dependency set (fastapi, uvicorn, pydantic, PyYAML, PyGithub, click, httpx, python-telegram-bot, jinja2)
+- [ ] Initialize repo with `uv init`, configure `pyproject.toml` with the minimum dependency set (fastapi, uvicorn, pydantic, PyYAML, PyGithub, click, httpx, python-telegram-bot, jinja2, anthropic)
 - [ ] Implement `config.py`: `GlobalConfig` and `RepoConfig` pydantic models; `load_config(path) -> GlobalConfig` that wraps pydantic's validation errors in human-readable output
 - [ ] Implement `models.py`: `Finding`, `ScanContext`, `RunResult` dataclasses
 - [ ] Implement `__main__.py` with Click: `serve`, `validate`, `scan`, `queue list`, `queue clear` commands

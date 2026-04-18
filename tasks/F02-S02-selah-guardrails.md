@@ -32,7 +32,7 @@ Add Selah to Harvester's watch list with a theology-review scanner and four-laye
 
 ### Backend
 - [ ] Add Selah entry to `harvester-config.yaml` with confirmed guarded paths: `theology/**`, `training/**`, `prompts/**`, `doctrine/**`; policy: `never_execute`; scanner: `theology_review` on 30-day cadence
-- [ ] Implement `scanners/theology_review.py`: reads `prompts/` and any `doctrine/` or `theology/` files from `repo_config.local_path`; LLM call (Grok) examining Nicene Creed alignment and denominational consistency; returns `Finding` with `touches_guarded_paths=True` and summary framed as "flag for review"
+- [ ] Implement `scanners/theology_review.py`: `SYSTEM_PROMPT` instructs Claude to read `prompts/`, `doctrine/`, and `theology/` files from the Selah repo, examine Nicene Creed alignment and denominational consistency, and call `report_finding` with `touches_guarded_paths=True` and summary framed as "flag for review"; `ENABLED_TOOLS = ["read_file", "list_directory"]`; `scanner_runner.py` drives the tool-calling loop
 - [ ] Write issue body template for theology findings: prefix with explicit disclaimer that this is a review request, not an automation target; add `theological-review-required` label automatically
 - [ ] Write `docs/selah-guardrails.md`: describe all four layers, their independence, and what to do if a violation somehow occurs
 
