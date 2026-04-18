@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -8,13 +9,13 @@ from fastapi import FastAPI
 
 from harvester.config import ConfigLoadError, HarvesterConfig, load_config
 from harvester.github_client import GitHubClient
+from harvester.queue import init_queue
+from harvester.scheduler import run_scheduler
 from harvester.webhook import router as webhook_router
 
 logger = logging.getLogger(__name__)
 
 _config: HarvesterConfig | None = None
-
-_QUEUE_SUBDIRS = ("pending", "completed", "failed", "rejected")
 
 
 def get_config() -> HarvesterConfig:
@@ -34,10 +35,9 @@ async def lifespan(app: FastAPI):
         logger.error("Startup aborted: %s", exc)
         raise
 
-    # Create operational directories (queue module owns this in F01-S03).
+    # Ensure operational directories exist.
     queue_root = Path(_config.settings.queue_path)
-    for subdir in _QUEUE_SUBDIRS:
-        (queue_root / subdir).mkdir(parents=True, exist_ok=True)
+    init_queue(queue_root)
     Path(_config.settings.findings_log_path).mkdir(parents=True, exist_ok=True)
     Path(_config.settings.run_logs_path).mkdir(parents=True, exist_ok=True)
 
@@ -54,8 +54,17 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("GITHUB_TOKEN not set — skipping label sync")
 
+    # Start scheduler as a background task.
+    scheduler_task = asyncio.create_task(run_scheduler(_config))
+
     logger.info("Harvester ready on port %s", _config.settings.webhook_port)
     yield
+
+    scheduler_task.cancel()
+    try:
+        await scheduler_task
+    except asyncio.CancelledError:
+        pass
 
     _config = None
 

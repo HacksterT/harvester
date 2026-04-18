@@ -72,6 +72,8 @@ def queue() -> None:
 @queue.command("list")
 @click.option("--config", default="harvester-config.yaml", show_default=True)
 def queue_list(config: str) -> None:
+    from harvester.queue import list_queue
+
     try:
         cfg = load_config(config)
     except ConfigLoadError as exc:
@@ -79,10 +81,11 @@ def queue_list(config: str) -> None:
         sys.exit(1)
 
     queue_root = Path(cfg.settings.queue_path)
-    for subdir in ("pending", "completed", "failed", "rejected"):
-        d = queue_root / subdir
-        items = list(d.glob("*.json")) if d.exists() else []
-        click.echo(f"  {subdir:<12} {len(items):>4} item(s)")
+    status = list_queue(queue_root)
+    for subdir, info in status.items():
+        click.echo(f"  {subdir:<12} {info['count']:>4} item(s)")
+        for name in info["items"]:
+            click.echo(f"    {name}")
 
 
 @queue.command("clear")
