@@ -25,11 +25,12 @@ The cross-repo pattern scanner (F02-S04) is the self-annealing mechanism from th
 
 | ID | Title | Priority | Status |
 |----|-------|----------|--------|
-| F02-S01 | Minimal Web UI | Should-Have | Backlog |
+| F02-S01 | Minimal Web UI | Must-Have | Backlog |
 | F02-S02 | Selah Theology Review Scanner and Guardrails | Should-Have | Backlog |
 | F02-S03 | Generic Code Health Scanner | Should-Have | Backlog |
 | F02-S04 | Cross-Repo Pattern Scanner | Nice-to-Have | Backlog |
 | F02-S05 | Remove Ezra Native Improvement System | Should-Have | Backlog |
+| F02-S06 | Telegram Notifications | Must-Have | Backlog |
 
 ## Non-Goals
 
