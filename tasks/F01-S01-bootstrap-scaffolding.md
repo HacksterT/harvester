@@ -3,8 +3,9 @@ type: story
 feature: F01
 story: F01-S01
 title: Bootstrap and Scaffolding
-status: backlog
+status: complete
 created: 2026-04-18
+completed: 2026-04-18
 priority: must-have
 ---
 
@@ -12,6 +13,7 @@ priority: must-have
 
 **Feature:** F01 — Harvester Core — Autonomous Improvement Loop
 **Priority:** Must-Have
+**Status:** Complete — merged to `main`
 
 ## Summary
 
@@ -19,33 +21,37 @@ Create the `hackstert/harvester` repository with complete project structure, wor
 
 ## Acceptance Criteria
 
-- [ ] `uv sync` produces a working environment with no errors
-- [ ] `python -m harvester validate` passes on a well-formed config and prints a structured summary
-- [ ] `python -m harvester validate` rejects a malformed config with a specific, actionable error message (not a raw pydantic stack trace)
-- [ ] `python -m harvester serve` starts and logs "Harvester ready on port 8500" with no errors
-- [ ] `GET /healthz` returns `{"status": "ok", "version": "..."}` while the server is running
-- [ ] `python -m harvester queue list` prints queue state (empty at this point, gracefully)
-- [ ] `CLAUDE.md` in the repo root accurately describes the Harvester microservice (not Ezra)
-- [ ] `.gitignore` excludes `data/`, `workspaces/`, `.env`, `__pycache__`, `.venv`
+- [x] `uv sync` produces a working environment with no errors
+- [x] `python -m harvester validate` passes on a well-formed config and prints a structured summary
+- [x] `python -m harvester validate` rejects a malformed config with a specific, actionable error message (not a raw pydantic stack trace)
+- [x] `python -m harvester serve` starts and logs "Harvester ready on port 8500" with no errors
+- [x] `GET /healthz` returns `{"status": "ok", "version": "..."}` while the server is running
+- [x] `python -m harvester queue list` prints queue state (empty at this point, gracefully)
+- [x] `CLAUDE.md` in the repo root accurately describes the Harvester microservice (not Ezra)
+- [x] `.gitignore` excludes `data/`, `workspaces/`, `.env`, `__pycache__`, `.venv`
 
 ## Tasks
 
 ### Backend
-- [ ] Initialize repo with `uv init`, configure `pyproject.toml` with the minimum dependency set (fastapi, uvicorn, pydantic, PyYAML, PyGithub, click, httpx, python-telegram-bot, jinja2, anthropic)
-- [ ] Implement `config.py`: `GlobalConfig` and `RepoConfig` pydantic models; `load_config(path) -> GlobalConfig` that wraps pydantic's validation errors in human-readable output
-- [ ] Implement `models.py`: `Finding`, `ScanContext`, `RunResult` dataclasses
-- [ ] Implement `__main__.py` with Click: `serve`, `validate`, `scan`, `queue list`, `queue clear` commands
-- [ ] Implement `main.py`: FastAPI app, lifespan (no-op for now), `GET /healthz` route, startup log
-- [ ] Create directory layout: `src/harvester/`, `src/harvester/scanners/`, `src/harvester/ui/`, `scripts/`, `data/queue/{pending,completed,failed,rejected}/`, `data/findings/`, `data/logs/`, `docs/`
-- [ ] Write `harvester-config.yaml` with Ezra-assistant as the single configured repo
+- [x] Initialize repo with `uv init`, configure `pyproject.toml` with the minimum dependency set (fastapi, uvicorn, pydantic, PyYAML, PyGithub, click, httpx, python-telegram-bot, jinja2, anthropic)
+- [x] Implement `config.py`: `GlobalConfig` and `RepoConfig` pydantic models; `load_config(path) -> GlobalConfig` that wraps pydantic's validation errors in human-readable output
+- [x] Implement `models.py`: `Finding`, `ScanContext`, `RunResult` dataclasses
+- [x] Implement `__main__.py` with Click: `serve`, `validate`, `scan`, `queue list`, `queue clear` commands
+- [x] Implement `main.py`: FastAPI app, lifespan (creates operational dirs, loads config), `GET /healthz` route, startup log
+- [x] Create directory layout: `src/harvester/`, `src/harvester/scanners/`, `src/harvester/ui/`, `scripts/`, `data/queue/{pending,completed,failed,rejected}/`, `data/findings/`, `data/logs/`, `docs/`
+- [x] Write `harvester-config.yaml` with Ezra-assistant as the single configured repo
 
 ### Testing & Verification
-- [ ] Write `tests/test_config.py`: valid config loads correctly, missing required fields produce clear errors, invalid cadence values rejected
-- [ ] Local Testing: `uv run pytest tests/test_config.py -x` passes; `python -m harvester validate` and `python -m harvester serve` work as specified
-- [ ] Manual Testing: CHECKPOINT — Confirm server starts and `/healthz` responds before proceeding
+- [x] Write `tests/test_config.py`: valid config loads correctly, missing required fields produce clear errors, invalid cadence values rejected — 10 tests, all passing
+- [x] Local Testing: `uv run pytest tests/test_config.py -x` passes; `python -m harvester validate` and `python -m harvester serve` work as specified
+- [x] Manual Testing: CHECKPOINT — Server starts, `/healthz` returns `{"status":"ok","version":"0.1.0"}`
+
+### Convenience Scripts
+- [x] `start.sh` — sources `.env`, PID-guarded background launch, confirms `/healthz` responds
+- [x] `stop.sh` — graceful SIGTERM with 5s wait, SIGKILL fallback, PID file cleanup
 
 ### Git
-- [ ] Commit, push to `hackstert/harvester`
+- [x] Committed as `feat: F01-S01 bootstrap and scaffolding` — pushed to `hackstert/harvester` main
 
 ## Technical Notes
 
