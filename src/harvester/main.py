@@ -1,12 +1,14 @@
 import logging
 import os
 from contextlib import asynccontextmanager
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from fastapi import FastAPI
 
-from harvester.config import HarvesterConfig, load_config, ConfigLoadError
+from harvester.config import ConfigLoadError, HarvesterConfig, load_config
+from harvester.github_client import GitHubClient
+from harvester.webhook import router as webhook_router
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +34,25 @@ async def lifespan(app: FastAPI):
         logger.error("Startup aborted: %s", exc)
         raise
 
-    # Create operational directories so the server can run even on a fresh checkout.
-    # Queue module (F01-S03) will own this logic long-term.
+    # Create operational directories (queue module owns this in F01-S03).
     queue_root = Path(_config.settings.queue_path)
     for subdir in _QUEUE_SUBDIRS:
         (queue_root / subdir).mkdir(parents=True, exist_ok=True)
     Path(_config.settings.findings_log_path).mkdir(parents=True, exist_ok=True)
     Path(_config.settings.run_logs_path).mkdir(parents=True, exist_ok=True)
+
+    # Ensure GitHub label taxonomy exists on every configured repo.
+    github_token = os.environ.get("GITHUB_TOKEN", "")
+    if github_token:
+        for repo_cfg in _config.repos:
+            try:
+                client = GitHubClient(token=github_token, repo_full_name=repo_cfg.github)
+                await client.ensure_labels_exist()
+                logger.info("Labels verified for %s", repo_cfg.github)
+            except Exception as exc:
+                logger.warning("Label sync failed for %s: %s", repo_cfg.github, exc)
+    else:
+        logger.warning("GITHUB_TOKEN not set — skipping label sync")
 
     logger.info("Harvester ready on port %s", _config.settings.webhook_port)
     yield
@@ -52,6 +66,7 @@ except PackageNotFoundError:
     _version = "dev"
 
 app = FastAPI(title="Harvester", version=_version, lifespan=lifespan)
+app.include_router(webhook_router)
 
 
 @app.get("/healthz")
