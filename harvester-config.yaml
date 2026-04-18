@@ -1,0 +1,69 @@
+# Harvester Configuration
+# This file defines which repos to watch and how to watch them.
+# Edit this file to add repos, change scanner cadences, or adjust settings.
+# Harvester validates this file on startup and refuses to start if it is malformed.
+#
+# See docs/onboarding-guide.md for the full process of adding a new repo.
+
+global:
+  queue_path: data/queue
+  state_path: data/harvester-state.json
+  workspaces_path: ~/agent-workspaces
+  findings_log_path: data/findings
+  run_logs_path: data/logs
+  default_max_turns: 50
+  default_timeout_minutes: 30
+  scheduler_tick_seconds: 3600       # Check for overdue scanners every hour
+  agent_run_time: "02:00"            # Local time for launchd schedule
+  telegram_chat_id: ${TELEGRAM_ALLOWED_CHAT_ID}
+  webhook_port: 8500
+  claude_code_auth: subscription     # subscription | api
+
+repos:
+  - name: ezra-assistant
+    github: HacksterT/ezra-assistant
+    local_path: ~/Projects/ezra-assistant
+    claude_md_path: CLAUDE.md
+    scanners:
+      - name: skill_gaps
+        cadence_days: 9
+      - name: memory
+        cadence_days: 9
+      - name: tokens
+        cadence_days: 9
+      - name: code_health
+        cadence_days: 7
+      - name: dependency_freshness
+        cadence_days: 30
+      - name: test_coverage
+        cadence_days: 14
+    label_prefix: improvement
+    priority_labels: [must-have, should-have, nice-to-have]
+    guarded_paths: []
+    branch_prefix: improvement/
+    draft_pr_default: true
+
+  # Selah — add after F02-S02 is complete
+  # - name: selah
+  #   github: HacksterT/selah
+  #   local_path: ~/Projects/selah
+  #   claude_md_path: CLAUDE.md
+  #   scanners:
+  #     - name: code_health
+  #       cadence_days: 14
+  #     - name: theology_review
+  #       cadence_days: 30
+  #     - name: dependency_freshness
+  #       cadence_days: 30
+  #   label_prefix: improvement
+  #   priority_labels: [must-have, should-have, nice-to-have]
+  #   guarded_paths:
+  #     - "theology/**"
+  #     - "training/**"
+  #     - "prompts/**"
+  #     - "doctrine/**"
+  #   guarded_path_policy: never_execute
+  #   extra_labels_on_guarded: [theological-review-required]
+  #   telegram_flag_on_guarded: true
+  #   branch_prefix: improvement/
+  #   draft_pr_default: true
