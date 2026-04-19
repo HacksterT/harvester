@@ -11,6 +11,8 @@ from harvester.config import ConfigLoadError, HarvesterConfig, load_config
 from harvester.github_client import GitHubClient
 from harvester.queue import init_queue
 from harvester.scheduler import run_scheduler
+from harvester.reconcile import reconcile_on_startup
+from harvester.runner import router as runner_router
 from harvester.webhook import router as webhook_router
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,14 @@ async def lifespan(app: FastAPI):
     # Start scheduler as a background task.
     scheduler_task = asyncio.create_task(run_scheduler(_config))
 
+    # Startup reconciliation — runs once in background, does not block startup.
+    reconcile_task = asyncio.create_task(reconcile_on_startup(_config))
+    reconcile_task.add_done_callback(
+        lambda t: logger.error("Reconciliation task failed: %s", t.exception())
+        if not t.cancelled() and t.exception()
+        else None
+    )
+
     logger.info("Harvester ready on port %s", _config.settings.webhook_port)
     yield
 
@@ -76,6 +86,7 @@ except PackageNotFoundError:
 
 app = FastAPI(title="Harvester", version=_version, lifespan=lifespan)
 app.include_router(webhook_router)
+app.include_router(runner_router)
 
 
 @app.get("/healthz")
