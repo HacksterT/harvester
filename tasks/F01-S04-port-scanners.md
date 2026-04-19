@@ -3,8 +3,9 @@ type: story
 feature: F01
 story: F01-S04
 title: Build Scanner Framework with Claude SDK
-status: backlog
+status: in-progress
 created: 2026-04-18
+completed: 2026-04-19
 priority: must-have
 ---
 
@@ -31,25 +32,25 @@ The three Ezra-specific scanners (`skill_gaps`, `memory`, `tokens`) are implemen
 - [ ] Integration test: point at a real local Ezra checkout, run each scanner end-to-end, confirm a valid `Finding` is returned
 - [ ] Each scanner produces at least one real GitHub issue in `hackstert/ezra-assistant` during development
 - [ ] Original Ezra scanners still functional — no changes to `src/ezra/improvements/`
-- [ ] `docs/scanner-contract.md` written: the contract, tool library reference, how to add a new scanner module
+- [x] `docs/scanner-contract.md` written: the contract, tool library reference, how to add a new scanner module
 
 ## Tasks
 
 ### Backend
 
-- [ ] Implement `tools.py`: six `@beta_tool` async functions (`read_file`, `query_sqlite`, `run_command`, `list_directory`, `read_git_log`, `report_finding`) using the `anthropic.beta_tool` decorator — the SDK generates tool schemas automatically; `run_command` enforces allowlist on `shlex.split(command)[0]`; `query_sqlite` enforces SELECT-only; `report_finding` parameters match `Finding` dataclass fields exactly
-- [ ] Implement `build_tools(enabled, target_config)` in `tools.py`: returns the subset of `@beta_tool` functions matching `enabled` names, with filesystem ops scoped to `target_config.local_path`
-- [ ] Implement `scanner_runner.py`: `async def run_scanner(scanner_module, target_config, context) -> Finding | None`; instantiates `AsyncAnthropic()`; calls `client.beta.messages.tool_runner()` with `SYSTEM_PROMPT`, enabled tools + `report_finding`, model `claude-sonnet-4-6`, `max_tokens=4096`; iterates messages; returns `Finding` when `report_finding` invoked, `None` on `end_turn`
-- [ ] Implement `scanners/skill_gaps.py`: `SYSTEM_PROMPT` instructs Claude to read conversation history from Ezra's `data/state/ezra.db` LangGraph checkpointer and `docs/skill-inventory.md`; `ENABLED_TOOLS = ["read_file", "query_sqlite", "list_directory"]`
-- [ ] Implement `scanners/memory.py`: `SYSTEM_PROMPT` instructs Claude to examine `data/memory/boluses.db` for embedding coverage, stale bolus rate, extraction rate; `ENABLED_TOOLS = ["query_sqlite"]`
-- [ ] Implement `scanners/tokens.py`: `SYSTEM_PROMPT` instructs Claude to read `token_log` table from `data/memory/boluses.db` and compute 7-day spend, cache hit rate, per-call cost; `ENABLED_TOOLS = ["query_sqlite"]`
-- [ ] Implement `writer.py`: `write_finding(finding, github_client, config)` — formats `Finding` into structured issue body, calls `create_issue()`, returns GitHub issue URL; logs finding to `data/findings/YYYY-MM-DD.jsonl`
+- [x] Implement `tools.py`: six `@beta_tool` async functions (`read_file`, `query_sqlite`, `run_command`, `list_directory`, `read_git_log`, `report_finding`) using the `anthropic.beta_tool` decorator — the SDK generates tool schemas automatically; `run_command` enforces allowlist on `shlex.split(command)[0]`; `query_sqlite` enforces SELECT-only; `report_finding` parameters match `Finding` dataclass fields exactly
+- [x] Implement `build_tools(enabled, target_config)` in `tools.py`: returns the subset of `@beta_tool` functions matching `enabled` names, with filesystem ops scoped to `target_config.local_path`
+- [x] Implement `scanner_runner.py`: `async def run_scanner(scanner_module, target_config, context) -> Finding | None`; instantiates `AsyncAnthropic()`; calls `client.beta.messages.tool_runner()` with `SYSTEM_PROMPT`, enabled tools + `report_finding`, model `claude-sonnet-4-6`, `max_tokens=4096`; iterates messages; returns `Finding` when `report_finding` invoked, `None` on `end_turn`
+- [x] Implement `scanners/skill_gaps.py`: `SYSTEM_PROMPT` instructs Claude to read conversation history from Ezra's `data/state/ezra.db` LangGraph checkpointer and `docs/skill-inventory.md`; `ENABLED_TOOLS = ["read_file", "query_sqlite", "list_directory"]`
+- [x] Implement `scanners/memory.py`: `SYSTEM_PROMPT` instructs Claude to examine `data/memory/boluses.db` for embedding coverage, stale bolus rate, extraction rate; `ENABLED_TOOLS = ["query_sqlite"]`
+- [x] Implement `scanners/tokens.py`: `SYSTEM_PROMPT` instructs Claude to read `token_log` table from `data/memory/boluses.db` and compute 7-day spend, cache hit rate, per-call cost; `ENABLED_TOOLS = ["query_sqlite"]`
+- [x] Implement `writer.py`: `write_finding(finding, github_client, config)` — formats `Finding` into structured issue body, calls `create_issue()`, returns GitHub issue URL; logs finding to `data/findings/YYYY-MM-DD.jsonl`
 
 ### Testing & Verification
 
-- [ ] Write `tests/test_scanner_runner.py`: mock `anthropic.AsyncAnthropic`; simulate tool-calling loop with synthetic tool_use blocks; assert `report_finding` input maps to `Finding` correctly; assert loop terminates on `end_turn`
-- [ ] Write `tests/scanners/test_skill_gaps.py`, `test_memory.py`, `test_tokens.py`: mock tool library responses; assert `SYSTEM_PROMPT` is non-empty and `ENABLED_TOOLS` is a subset of the allowed tool names
-- [ ] Write `tests/test_writer.py`: assert issue body format matches the contract; mock `GitHubClient`
+- [x] Write `tests/test_scanner_runner.py`: mock `anthropic.AsyncAnthropic`; simulate tool-calling loop with synthetic tool_use blocks; assert `report_finding` input maps to `Finding` correctly; assert loop terminates on `end_turn`
+- [x] Write `tests/scanners/test_skill_gaps.py`, `test_memory.py`, `test_tokens.py`: mock tool library responses; assert `SYSTEM_PROMPT` is non-empty and `ENABLED_TOOLS` is a subset of the allowed tool names
+- [x] Write `tests/test_writer.py`: assert issue body format matches the contract; mock `GitHubClient`
 - [ ] Local Testing: run integration test against real Ezra checkout at `~/Projects/ezra-assistant`; confirm each scanner returns a valid `Finding`
 - [ ] Manual Testing: CHECKPOINT — Run `python -m harvester scan ezra-assistant skill_gaps`; confirm a real GitHub issue appears with correct labels and structured body
 
