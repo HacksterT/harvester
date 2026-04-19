@@ -3,7 +3,7 @@ type: story
 feature: F01
 story: F01-S05
 title: Agent Runner with Subscription Auth
-status: backlog
+status: in-progress
 created: 2026-04-18
 priority: must-have
 ---
@@ -19,23 +19,23 @@ The overnight agent runner is the execution heart of Harvester. It drains the pe
 
 ## Acceptance Criteria
 
-- [ ] `scripts/agent-runner.sh` drains `data/queue/pending/` correctly, oldest-first
-- [ ] Each run uses a fresh workspace: hard reset to `origin/main` if exists, fresh clone if new
-- [ ] Subscription auth preflight: `claude --version` returns cleanly; runner exits with Telegram alert if stale
-- [ ] `gh` CLI authenticated preflight check
-- [ ] Guarded-path second-layer enforcement: diff checked before push; violation aborts run, moves to `failed/`, comments on issue, fires Telegram alert
-- [ ] PR opened in draft state: `gh pr create --draft`; title format `Closes #N: <issue title>`
-- [ ] Failed run path: issue receives comment with failure reason; queue item moves to `failed/`; Telegram summary includes failure count
-- [ ] Telegram post-run summary fires: "Harvester run complete: N succeeded, M failed"
-- [ ] `scripts/install-launchd.sh` correctly installs and loads the launchd plist for 02:00 local time
-- [ ] One full end-to-end cycle completed: real Ezra issue → label → enqueue → overnight run → draft PR
+- [x] `scripts/agent-runner.sh` drains `data/queue/pending/` correctly, oldest-first
+- [x] Each run uses a fresh workspace: hard reset to `origin/main` if exists, fresh clone if new
+- [x] Subscription auth preflight: `claude --version` returns cleanly; runner exits with Telegram alert if stale
+- [x] `gh` CLI authenticated preflight check
+- [x] Guarded-path second-layer enforcement: diff checked before push; violation aborts run, moves to `failed/`, comments on issue, fires Telegram alert
+- [x] PR opened in draft state: `gh pr create --draft`; title format `Closes #N: <issue title>`
+- [x] Failed run path: issue receives comment with failure reason; queue item moves to `failed/`; Telegram summary includes failure count
+- [x] Telegram post-run summary fires: "Harvester run complete: N succeeded, M failed"
+- [x] `scripts/install-launchd.sh` correctly installs and loads the launchd plist for 02:00 local time
+- [ ] One full end-to-end cycle completed: real Ezra issue → label → enqueue → overnight run → draft PR (manual — HT-10)
 
 ## Tasks
 
 ### Infrastructure
-- [ ] Write `scripts/agent-runner.sh`: preflight checks (claude, gh, subscription session); iterate `pending/*.json` oldest-first; per-item workspace prep (clone or hard reset); `gh issue view` to fetch issue body; build `/tmp/task.md` combining issue body and repo's `CLAUDE.md`; invoke `claude --task-file /tmp/task.md --max-turns 50 --timeout-minutes 30`; diff check for guarded paths; push branch; `gh pr create --draft`; move queue item; Telegram notification per item; post-run summary
-- [ ] Write `scripts/install-launchd.sh`: writes `~/Library/LaunchAgents/com.hackstert.harvester.plist` with `StartCalendarInterval` (02:00), `ProgramArguments`, stdout/stderr to `data/logs/`, `EnvironmentVariables` including PATH with Homebrew + gh + claude
-- [ ] Write `runner.py` in `src/harvester/`: Python module for queue inspection used by launchd plist health check; also exposes `GET /api/runner/status` showing last run time and outcome from logs
+- [x] Write `scripts/agent-runner.sh`: preflight checks (claude, gh, subscription session); iterate `pending/*.json` oldest-first; per-item workspace prep (clone or hard reset); `gh issue view` to fetch issue body; build `/tmp/task.md` combining issue body and repo's `CLAUDE.md`; invoke `claude -p --max-turns 50 < /tmp/task.md`; diff check for guarded paths; push branch; `gh pr create --draft`; move queue item; Telegram notification per item; post-run summary
+- [x] Write `scripts/install-launchd.sh`: writes `~/Library/LaunchAgents/com.hackstert.harvester.plist` with `StartCalendarInterval` (02:00), `ProgramArguments`, stdout/stderr to `data/logs/`, `EnvironmentVariables` including PATH with Homebrew + gh + claude
+- [x] Write `runner.py` in `src/harvester/`: Python module for queue inspection used by launchd plist health check; also exposes `GET /api/runner/status` showing last run time and outcome from logs
 
 ### Testing & Verification
 - [ ] Test guarded-path enforcement: create a mock queue item with `guarded_check.required=true` and a diff touching a guarded path; confirm run aborts, item moves to `failed/`, issue comment written (use `--dry-run` flag in test mode)

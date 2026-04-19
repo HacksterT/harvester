@@ -259,9 +259,9 @@ check_guarded_paths() {
         return 0
     fi
 
-    # Get list of changed files vs. main
+    # Get list of changed files vs. origin/main
     local changed_files
-    changed_files="$(cd "$workspace" && git diff --name-only main)"
+    changed_files="$(cd "$workspace" && git diff --name-only origin/main...HEAD)"
 
     if [[ -z "$changed_files" ]]; then
         log "No files changed in this run (empty diff)"
@@ -322,26 +322,21 @@ process_item() {
     local max_turns branch_prefix claude_md_rel
 
     issue_num="$(json_field "$item_path" '.issue_number')"
-    repo_github="$(json_field "$item_path" '.repo')"
+    repo_github="$(json_field "$item_path" '.github_repo')"
     repo_name="$(json_field "$item_path" '.repo_name')"
-    repo_local_path="$(json_field "$item_path" '.repo_local_path')"
     issue_title="$(json_field "$item_path" '.issue_title')"
-    max_turns="$(json_field "$item_path" '.agent_config.max_turns')"
-    claude_md_rel="$(json_field "$item_path" '.agent_config.claude_md_path')"
+    max_turns=""
+    claude_md_rel=""
 
     # Defaults for any missing fields
     max_turns="${max_turns:-$DEFAULT_MAX_TURNS}"
-    claude_md_rel="${claude_md_rel:-CLAUDE.md}"
+    claude_md_rel="CLAUDE.md"
     branch_prefix="$(config_repo_field "$repo_name" '.branch_prefix')"
     branch_prefix="${branch_prefix:-improvement/}"
-
-    # Expand tilde in repo_local_path if present
-    repo_local_path="${repo_local_path/#\~/$HOME}"
 
     log "issue_num      = $issue_num"
     log "repo_github    = $repo_github"
     log "repo_name      = $repo_name"
-    log "repo_local     = $repo_local_path"
     log "branch_prefix  = $branch_prefix"
     log "max_turns      = $max_turns"
     log "claude_md      = $claude_md_rel"
@@ -474,7 +469,7 @@ EOF
     # first; timeout is the failsafe.
     local claude_exit_code=0
     timeout "${DEFAULT_TIMEOUT_MINUTES}m" \
-        claude --task-file "$task_file" --max-turns "$max_turns" \
+        claude -p --max-turns "$max_turns" < "$task_file" \
         || claude_exit_code=$?
 
     local claude_end
@@ -509,8 +504,8 @@ EOF
 
     # Verify Claude actually made commits
     local commit_count
-    commit_count="$(git rev-list --count main..HEAD 2>/dev/null || \
-                    git rev-list --count master..HEAD 2>/dev/null || \
+    commit_count="$(git rev-list --count origin/main..HEAD 2>/dev/null || \
+                    git rev-list --count origin/master..HEAD 2>/dev/null || \
                     echo 0)"
     if [[ "$commit_count" -eq 0 ]]; then
         log "ERROR: Claude Code produced no commits"

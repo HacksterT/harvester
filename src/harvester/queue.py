@@ -63,6 +63,15 @@ def move_to(item_path: str, destination: str, queue_path: Path) -> Path:
     return dest
 
 
+def queue_counts(queue_path: Path) -> dict[str, int]:
+    """Return {subdir: count} for all four queue directories."""
+    return {
+        subdir: sum(1 for _ in (queue_path / subdir).glob("*.json"))
+        if (queue_path / subdir).is_dir() else 0
+        for subdir in SUBDIRS
+    }
+
+
 def list_queue(queue_path: Path) -> dict:
     result: dict = {}
     for subdir in SUBDIRS:
