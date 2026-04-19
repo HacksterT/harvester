@@ -22,7 +22,7 @@ Two human decisions. Everything else is automatic.
 
 - **Cron daemon, not a platform.** One FastAPI server, one asyncio scheduler, one bash script. No agent framework, no vector store, no graph execution engine.
 - **Configuration is a file.** All behavior is defined in `harvester-config.yaml`. Editing the YAML is how you change behavior.
-- **Scanners are importable modules.** Each scanner is a Python module implementing one async function. Testable in isolation, no plugin discovery.
+- **Scanners are importable modules.** Each scanner is a Python module with a system prompt and a tool list. The framework drives the LLM loop; scanners have no side effects and are testable in isolation.
 - **Human gates are sacred.** Triage (apply `agent-ready`) and PR review are the only mandatory human steps and cannot be configured away.
 - **Reversibility over speed.** Every automated action is undoable. Issues can be closed. PRs can be rejected. Merges can be reverted.
 
@@ -54,7 +54,7 @@ The agent runner invokes Claude Code with subscription authentication (no API ke
 - Claude Code CLI with active Claude.ai subscription
 - GitHub CLI (`gh`) authenticated
 - Cloudflare Tunnel (for webhook delivery — existing infrastructure or set up via [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/))
-- xAI API key (Grok, for scanner LLM calls)
+- Anthropic API key (for scanner LLM calls)
 - Telegram bot token (for notifications)
 
 ---
@@ -71,11 +71,14 @@ python -m harvester validate
 # Start the service
 python -m harvester serve
 
-# Run a scanner on demand
-python -m harvester scan <repo-name> <scanner-name>
-
 # Check queue state
 python -m harvester queue list
+
+# Check queue drift against GitHub
+python -m harvester reconcile
+
+# Run a scanner on demand (not yet implemented)
+# python -m harvester scan <repo-name> <scanner-name>
 ```
 
 ---
@@ -108,16 +111,14 @@ Adding a new repo: append an entry and restart Harvester. Config validation runs
 
 ## Available Scanners
 
-| Scanner | What it finds | Applies to |
-|---|---|---|
-| `code_health` | Oversized files, high complexity, stale TODOs, type hint gaps | Any Python repo |
-| `dependency_freshness` | Unpinned or stale dependencies | Any repo with a lock file |
-| `test_coverage` | Coverage gaps by module | Any repo with a test suite |
-| `skill_gaps` | Conversation vs. skill inventory gaps | LLM agent repos |
-| `memory` | Memory system metrics and coverage | Ezra-compatible memory systems |
-| `tokens` | LLM spend and cache hit rate | Any repo with LLM API usage |
-| `theology_review` | Theological content consistency | Selah and ministry repos |
-| `cross_repo_patterns` | Patterns across all repos (self-annealing) | Meta — runs monthly |
+| Scanner | What it finds | Applies to | Status |
+|---|---|---|---|
+| `skill_gaps` | Conversation vs. skill inventory gaps | LLM agent repos | Implemented |
+| `memory` | Memory system metrics and coverage | Ezra-compatible memory systems | Implemented |
+| `tokens` | LLM spend and cache hit rate | Any repo with LLM API usage | Implemented |
+| `code_health` | Oversized files, high complexity, stale TODOs, type hint gaps | Any Python repo | F02 |
+| `theology_review` | Theological content consistency | Selah and ministry repos | F02 |
+| `cross_repo_patterns` | Patterns across all repos (self-annealing) | Meta — runs monthly | F02 |
 
 ---
 
@@ -133,7 +134,6 @@ See [`docs/onboarding-guide.md`](docs/onboarding-guide.md) for the full assessme
 |---|---|
 | [`docs/onboarding-guide.md`](docs/onboarding-guide.md) | How to onboard a new repo |
 | [`docs/scanner-contract.md`](docs/scanner-contract.md) | How to write a new scanner |
-| [`docs/selah-guardrails.md`](docs/selah-guardrails.md) | Theological content safety design |
 | [`docs/operational-runbook.md`](docs/operational-runbook.md) | Common operations and failure recovery |
 | [`docs/ezra-technical-guide.md`](docs/ezra-technical-guide.md) | Architecture reference for Ezra-dispatched agents |
 | [`tasks/F01-harvester-core.md`](tasks/F01-harvester-core.md) | Core feature canvas |
