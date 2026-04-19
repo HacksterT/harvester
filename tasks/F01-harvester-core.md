@@ -28,11 +28,11 @@ The architecture is intentionally boring: a FastAPI server with an asyncio sched
 | ID | Title | Priority | Status |
 |----|-------|----------|--------|
 | F01-S01 | Bootstrap and Scaffolding | Must-Have | Complete |
-| F01-S02 | GitHub Integration Layer | Must-Have | Backlog |
+| F01-S02 | GitHub Integration Layer | Must-Have | Complete |
 | F01-S03 | Scheduler and Queue System | Must-Have | Complete |
-| F01-S04 | Build Scanner Framework with Claude SDK | Must-Have | Backlog |
-| F01-S05 | Agent Runner with Subscription Auth | Must-Have | Backlog |
-| F01-S06 | Webhook-Driven State Synchronization | Must-Have | Backlog |
+| F01-S04 | Build Scanner Framework with Claude SDK | Must-Have | Complete |
+| F01-S05 | Agent Runner with Subscription Auth | Must-Have | Complete |
+| F01-S06 | Webhook-Driven State Synchronization | Must-Have | Complete |
 
 ## Non-Goals
 

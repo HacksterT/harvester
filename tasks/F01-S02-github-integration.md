@@ -3,8 +3,9 @@ type: story
 feature: F01
 story: F01-S02
 title: GitHub Integration Layer
-status: backlog
+status: complete
 created: 2026-04-18
+completed: 2026-04-18
 priority: must-have
 ---
 
@@ -19,13 +20,13 @@ Build the complete GitHub integration: a `GitHubClient` wrapper around PyGithub 
 
 ## Acceptance Criteria
 
-- [ ] `GitHubClient` supports: create issue, get issue, list issues, close issue, comment on issue, apply labels, ensure labels exist
-- [ ] Rate limiting handled with exponential backoff; a 429 response does not crash Harvester
-- [ ] `POST /webhook` verifies `X-Hub-Signature-256` using HMAC-SHA256; unsigned requests return 401
-- [ ] Label taxonomy auto-created on startup for each configured repo (idempotent — existing labels not duplicated)
-- [ ] Issue creation tested end-to-end: a real issue appears in `hackstert/ezra-assistant`
-- [ ] Webhook receiving tested via GitHub's "Redeliver" feature on a real event
-- [ ] Webhook secret mismatch logged at WARNING level and rejected cleanly
+- [x] `GitHubClient` supports: create issue, get issue, list issues, close issue, comment on issue, apply labels, ensure labels exist
+- [x] Rate limiting handled with exponential backoff; a 429 response does not crash Harvester
+- [x] `POST /webhook` verifies `X-Hub-Signature-256` using HMAC-SHA256; unsigned requests return 401
+- [x] Label taxonomy auto-created on startup for each configured repo (idempotent — existing labels not duplicated)
+- [ ] Issue creation tested end-to-end: a real issue appears in `hackstert/ezra-assistant` (manual — HT-07)
+- [ ] Webhook receiving tested via GitHub's "Redeliver" feature on a real event (manual — HT-13)
+- [x] Webhook secret mismatch logged at WARNING level and rejected cleanly
 
 ## Tasks
 
