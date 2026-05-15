@@ -1,12 +1,13 @@
 ---
 project: harvester
-updated: 2026-04-18
+updated: 2026-05-15
 description: "Autonomous repository improvement service that runs scanners on a schedule, creates GitHub issues for findings, and executes approved changes overnight via Claude Code."
+path: /Users/hackstert/Projects/harvester/CONTEXT.md
 ---
 
 ## Overview
 
-Harvester is a self-improving code maintenance service for personal repositories running on HacksterT's Mac. It applies the Karpathy autoresearch loop to code improvement: scanners surface findings as GitHub issues, the `agent-ready` label dispatches an overnight agent run, and the resulting draft PR is reviewed the next morning. Two human decisions per cycle — triage and review — everything else is automatic. F01 (core loop on Ezra) is complete and in manual testing; F02 (web UI, Selah onboarding, cross-repo patterns) is backlog pending 30-day stability.
+Harvester is a self-improving code maintenance service for personal repositories running on HacksterT's Mac. It applies the Karpathy autoresearch loop to code improvement: scanners surface findings as GitHub issues, the `agent-ready` label dispatches an overnight agent run, and the resulting draft PR is reviewed the next morning. Two human decisions per cycle — triage and review — everything else is automatic. F01 (core loop on Ezra) is code complete — all six stories implemented, 112 tests passing — and in manual testing (HT-01 through HT-14); F02 (web UI, Selah onboarding, cross-repo patterns) is backlog pending 30-day stability after F01's end-to-end cycle is confirmed.
 
 ## Architecture
 
@@ -16,8 +17,9 @@ Harvester is a self-improving code maintenance service for personal repositories
 - **Directory queue** (`queue.py`) — JSON files in `data/queue/{pending,completed,failed,rejected}/`; atomic writes via `os.replace()`; no database, no locking
 - **Webhook handler** (`webhook.py`) — HMAC-verified GitHub events; `issues.labeled` enqueues on `agent-ready`; `issues.closed` routes to `completed/` or `rejected/` via `state_reason`
 - **Agent runner** (`scripts/agent-runner.sh`) — bash script invoked by launchd at 02:00; drains pending queue with `claude -p < task_file --max-turns N`; uses Claude Code subscription, not API key
-- **Reconciliation** (`reconcile.py`) — startup background task; compares GitHub open+agent-ready issues against local pending; Telegram notification on drift; `--apply` moves stale items to `rejected/`
+- **Reconciliation** (`reconcile.py`) — startup background task and `reconcile` CLI command; compares GitHub open+agent-ready issues against local pending; Telegram notification on drift; `--apply` moves stale items to `rejected/`
 - **Writer** (`writer.py`) — formats and posts GitHub issues for scanner findings; shared `append_findings_record()` JSONL write primitive
+- **Notifier** (`notifier.py`) — Telegram notification stub; all call sites use `await send(message)`; real wiring deferred to F02-S06
 - **Web UI** (`ui/`) — Jinja2 server-rendered templates; no SPA, no React
 - **Scanners** (current): `skill_gaps`, `memory`, `tokens` for Ezra; `theology_review`, `code_health`, `cross_repo_patterns` are F02
 
@@ -45,6 +47,9 @@ Harvester is a self-improving code maintenance service for personal repositories
 
 ## Active Work
 
-- **F01 manual testing** — 14 checkpoints (HT-01 through HT-14) in `tasks/human-test.md`; F01-S04 through S06 complete and pushed; end-to-end cycle (HT-10) is the final F01 exit criterion
+- **F01 manual testing** — all six stories implemented, 112 tests passing; 14 checkpoints (HT-01 through HT-14) in `tasks/human-test.md`; next: run `scripts/agent-runner.sh` manually against one real pending item and confirm draft PR opens (HT-10 is the F01 exit criterion)
+- **Integration test: scanners** — run each scanner against real Ezra checkout at `~/Projects/ezra-assistant`; confirm valid Finding returned (F01-S04)
+- **Guarded-path enforcement test** — mock queue item with `guarded_check.required=true` touching a guarded path; confirm run aborts and item moves to `failed/` (F01-S05)
+- **F01-S01** — complete; moved to `tasks/completed/`
 - **F02 backlog** — web UI (F02-S01), Selah guardrails (F02-S02), code health scanner (F02-S03), cross-repo pattern scanner (F02-S04), remove Ezra native improvement system (F02-S05), Telegram notifications (F02-S06); F02 opens after 30-day F01 stability gate
-- **F01-S03 `scan` CLI command** — `python -m harvester scan <repo> <scanner>` is currently a stub (`sys.exit(1)`); implementing it is the first deferred follow-up post-F01
+- **`scan` CLI command** — `python -m harvester scan <repo> <scanner>` is a stub (`sys.exit(1)`); first deferred follow-up after F01 manual testing completes

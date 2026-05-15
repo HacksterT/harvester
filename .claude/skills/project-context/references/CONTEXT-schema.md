@@ -13,6 +13,7 @@ between the project-context skill (writer) and the Ezra context aggregator
 | `project` | string | Yes | Repo/folder name, lowercase-hyphenated. Must match the parent directory name. Used as the primary key for sync. |
 | `updated` | ISO date | Yes | Date this file was last regenerated (`YYYY-MM-DD`). Used by the aggregator to detect staleness. |
 | `description` | string | No | One-sentence summary of the project. Shown in the Knowledge Center project list. |
+| `path` | string | No | Absolute path to this CONTEXT.md file. Injected into the Overview bolus at seed time so Ezra can locate and read the full file via text_editor. |
 
 ### Example
 
@@ -21,6 +22,7 @@ between the project-context skill (writer) and the Ezra context aggregator
 project: ezra-assistant
 updated: 2026-04-16
 description: "Personal multi-agent AI assistant for Troy Sybert, built on LangGraph and FastAPI."
+path: /Users/hackstert/Projects/ezra-assistant/CONTEXT.md
 ---
 ```
 

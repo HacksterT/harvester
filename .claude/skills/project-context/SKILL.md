@@ -107,6 +107,7 @@ STATUS.md next_step. 3-5 bullet points with story IDs where applicable.
 project: {slug}
 updated: {YYYY-MM-DD}
 description: "{one sentence summary}"
+path: {absolute_path_to_CONTEXT.md}
 ---
 
 ## Overview
@@ -132,8 +133,10 @@ description: "{one sentence summary}"
 
 **Create mode:** Write the full file.
 
-**Update mode:** Preserve frontmatter except `updated` (set to today).
-Replace each section's content. Preserve any non-default `##` sections verbatim.
+**Update mode:** Preserve existing frontmatter values. Set `updated` to today.
+Add any frontmatter fields from the template that are missing (e.g. `path` if
+not yet present). Replace each section's content. Preserve any non-default
+`##` sections verbatim.
 
 ---
 
